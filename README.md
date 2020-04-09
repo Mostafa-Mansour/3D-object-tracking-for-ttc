@@ -4,11 +4,11 @@ Welcome to the final project of the camera course. By completing all the lessons
 
 <img src="images/course_code_structure.png" width="779" height="414" />
 
-In this final project, you will implement the missing parts in the schematic. To do this, you will complete four major tasks: 
-1. First, you will develop a way to match 3D objects over time by using keypoint correspondences. 
-2. Second, you will compute the TTC based on Lidar measurements. 
-3. You will then proceed to do the same using the camera, which requires to first associate keypoint matches to regions of interest and then to compute the TTC based on those matches. 
-4. And lastly, you will conduct various tests with the framework. Your goal is to identify the most suitable detector/descriptor combination for TTC estimation and also to search for problems that can lead to faulty measurements by the camera or Lidar sensor. In the last course of this Nanodegree, you will learn about the Kalman filter, which is a great way to combine the two independent TTC measurements into an improved version which is much more reliable than a single sensor alone can be. But before we think about such things, let us focus on your final project in the camera course. 
+In this project, I implemented these tasks: 
+1. First, I developed a way to match 3D objects over time by using their ROI at different time steps. 
+2. Second, I computed the TTC based on Lidar measurements. 
+3. I did the same using the camera, which required to first associate keypoint matches to regions of interest and then to compute the TTC based on those matches. 
+4. I conducted various tests with the framework. Your goal is to identify the most suitable detector/descriptor combination for TTC estimation and also to search for problems that can lead to faulty measurements by the camera or Lidar sensor. In the last course of this Nanodegree, you will learn about the Kalman filter, which is a great way to combine the two independent TTC measurements into an improved version which is much more reliable than a single sensor alone can be. But before we think about such things, let us focus on your final project in the camera course. 
 
 ## Dependencies for Running Locally
 * cmake >= 2.8
@@ -33,3 +33,10 @@ In this final project, you will implement the missing parts in the schematic. To
 2. Make a build directory in the top level project directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
 4. Run it: `./3D_object_tracking`.
+
+## Comments on the final performance
+1. TTC is flacuating at each time step due to noisy measurements.
+2. TTC using LiDARm in general is more accurate than TTC using camera. However, it is still sometimes gives weird results.
+3. Due to miscorrespondance, TTC using camera is not accurate.
+4. I found that ORB is a good descriptor to use for this task. 
+5. The results can be improved if we take the median over some steps OR if we use kind of Bayesian filter to track the distance over time. 
