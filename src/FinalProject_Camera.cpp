@@ -40,10 +40,20 @@ int main(int argc, const char *argv[])
     int imgFillWidth = 4;  // no. of digits which make up the file index (e.g. img-0001.png)
 
     // object detection
-    string yoloBasePath = dataPath + "dat/yolo/";
+    
+    string yoloBasePath = "../dat/yolo/";
     string yoloClassesFile = yoloBasePath + "coco.names";
     string yoloModelConfiguration = yoloBasePath + "yolov3.cfg";
     string yoloModelWeights = yoloBasePath + "yolov3.weights";
+    
+
+    /*
+    string yoloBasePath = "/home/mansour/Desktop/research/ORB_SLAM2/Examples/ROS/ORB_SLAM2/src/yolo_dat/";
+    string yoloClassesFile = yoloBasePath + "coco.names";
+    string yoloModelConfiguration = yoloBasePath + "yolov3.cfg";
+    string yoloModelWeights = yoloBasePath + "yolov3.weights"; 
+    */
+    
 
     // Lidar
     string lidarPrefix = "KITTI/2011_09_26/velodyne_points/data/000000";
@@ -87,11 +97,16 @@ int main(int argc, const char *argv[])
 
         // load image from file 
         cv::Mat img = cv::imread(imgFullFilename);
+        
 
         // push image into data frame buffer
         DataFrame frame;
         frame.cameraImg = img;
+        //double t= (double) cv::getTickCount();
         dataBuffer.push_back(frame);
+        //t=((double) cv::getTickCount() -t)/cv::getTickFrequency();
+        //std::cout<<"pushing is: "<<t *1000/1.0 <<"ms"<<std::endl;
+
 
         cout << "#1 : LOAD IMAGE INTO BUFFER done" << endl;
 
@@ -104,6 +119,7 @@ int main(int argc, const char *argv[])
                       yoloBasePath, yoloClassesFile, yoloModelConfiguration, yoloModelWeights, bVis);
 
         cout << "#2 : DETECT & CLASSIFY OBJECTS done" << endl;
+        std::cout<<"The number of detected boxes is "<<(dataBuffer.end()-1)->boundingBoxes.size()<<std::endl;
 
 
         /* CROP LIDAR POINTS */
@@ -128,19 +144,20 @@ int main(int argc, const char *argv[])
         float shrinkFactor = 0.10; // shrinks each bounding box by the given percentage to avoid 3D object merging at the edges of an ROI
         clusterLidarWithROI((dataBuffer.end()-1)->boundingBoxes, (dataBuffer.end() - 1)->lidarPoints, shrinkFactor, P_rect_00, R_rect_00, RT);
 
+
         // Visualize 3D objects
-        bVis = true;
+        bVis = false;
         if(bVis)
         {
-            show3DObjects((dataBuffer.end()-1)->boundingBoxes, cv::Size(4.0, 20.0), cv::Size(2000, 2000), true);
+            show3DObjects((dataBuffer.end()-1)->boundingBoxes, cv::Size(4.0, 20.0), cv::Size(1000, 1000), true);
         }
         bVis = false;
 
         cout << "#4 : CLUSTER LIDAR POINT CLOUD done" << endl;
-        
+    
         
         // REMOVE THIS LINE BEFORE PROCEEDING WITH THE FINAL PROJECT
-        continue; // skips directly to the next image without processing what comes beneath
+        //continue; // skips directly to the next image without processing what comes beneath
 
         /* DETECT IMAGE KEYPOINTS */
 
@@ -184,13 +201,13 @@ int main(int argc, const char *argv[])
         /* EXTRACT KEYPOINT DESCRIPTORS */
 
         cv::Mat descriptors;
-        string descriptorType = "BRISK"; // BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT
+        string descriptorType = "ORB"; // BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT
         descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
 
         // push descriptors for current frame to end of data buffer
         (dataBuffer.end() - 1)->descriptors = descriptors;
 
-        cout << "#6 : EXTRACT DESCRIPTORS done" << endl;
+        cout << "#6 : EXTRACT DESCRIPTORS done using: "<<descriptorType<< endl;
 
 
         if (dataBuffer.size() > 1) // wait until at least two images have been processed
@@ -199,9 +216,9 @@ int main(int argc, const char *argv[])
             /* MATCH KEYPOINT DESCRIPTORS */
 
             vector<cv::DMatch> matches;
-            string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
+            string matcherType = "MAT_FLANN";        // MAT_BF, MAT_FLANN
             string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
-            string selectorType = "SEL_NN";       // SEL_NN, SEL_KNN
+            string selectorType = "SEL_KNN";       // SEL_NN, SEL_KNN
 
             matchDescriptors((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints,
                              (dataBuffer.end() - 2)->descriptors, (dataBuffer.end() - 1)->descriptors,
@@ -211,6 +228,8 @@ int main(int argc, const char *argv[])
             (dataBuffer.end() - 1)->kptMatches = matches;
 
             cout << "#7 : MATCH KEYPOINT DESCRIPTORS done" << endl;
+
+
 
             
             /* TRACK 3D OBJECT BOUNDING BOXES */
@@ -249,10 +268,12 @@ int main(int argc, const char *argv[])
                         prevBB = &(*it2);
                     }
                 }
-
+                
                 // compute TTC for current match
                 if( currBB->lidarPoints.size()>0 && prevBB->lidarPoints.size()>0 ) // only compute TTC if we have Lidar points
                 {
+                    
+                    std::cout<<"TESTING"<<std::endl;
                     //// STUDENT ASSIGNMENT
                     //// TASK FP.2 -> compute time-to-collision based on Lidar data (implement -> computeTTCLidar)
                     double ttcLidar; 

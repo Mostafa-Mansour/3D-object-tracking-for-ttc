@@ -19,7 +19,10 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
     }
     else if (matcherType.compare("MAT_FLANN") == 0)
     {
-        // ...
+        
+        int normType = cv::NORM_HAMMING;
+        matcher = cv::DescriptorMatcher::create(cv::DescriptorMatcher::FLANNBASED);
+        
     }
 
     // perform matching task
@@ -31,8 +34,31 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
     else if (selectorType.compare("SEL_KNN") == 0)
     { // k nearest neighbors (k=2)
 
-        // ...
+        
+        std::vector< std::vector<cv::DMatch> > knn_matches;
+        if(descRef.type()!=CV_32F) {
+                descRef.convertTo(descRef, CV_32F);
+            }
+
+            if(descSource.type()!=CV_32F) {
+                descSource.convertTo(descSource, CV_32F);
+            }
+        matcher->knnMatch( descSource, descRef, knn_matches, 2 );
+        
+        //-- Filter matches using the Lowe's ratio test
+        const float ratio_thresh = 0.7f;
+        std::vector<cv::DMatch> good_matches;
+        
+        for (size_t i = 0; i < knn_matches.size(); i++)
+        {
+            if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
+            {
+                matches.push_back(knn_matches[i][0]);
+            }
+        }
     }
+
+    
 }
 
 // Use one of several types of state-of-art descriptors to uniquely identify keypoints
@@ -49,17 +75,20 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
 
         extractor = cv::BRISK::create(threshold, octaves, patternScale);
     }
-    else
+    else if(descriptorType.compare("ORB")==0)
     {
 
-        //...
+        extractor=cv::ORB::create();
+    }
+    else if(descriptorType.compare("BRIEF")==0){
+        extractor=cv::xfeatures2d::BriefDescriptorExtractor::create();
     }
 
     // perform feature description
-    double t = (double)cv::getTickCount();
+    //double t = (double)cv::getTickCount();
     extractor->compute(img, keypoints, descriptors);
-    t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
-    cout << descriptorType << " descriptor extraction in " << 1000 * t / 1.0 << " ms" << endl;
+    //t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    //cout << descriptorType << " descriptor extraction in " << 1000 * t / 1.0 << " ms" << endl;
 }
 
 // Detect keypoints in image using the traditional Shi-Thomasi detector

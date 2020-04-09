@@ -8,6 +8,8 @@
 
 struct LidarPoint { // single lidar point in space
     double x,y,z,r; // x,y,z in [m], r is point reflectivity
+
+    
 };
 
 struct BoundingBox { // bounding box around a classified object (contains both 2D and 3D data)
@@ -22,6 +24,7 @@ struct BoundingBox { // bounding box around a classified object (contains both 2
     std::vector<LidarPoint> lidarPoints; // Lidar 3D points which project into 2D image roi
     std::vector<cv::KeyPoint> keypoints; // keypoints enclosed by 2D roi
     std::vector<cv::DMatch> kptMatches; // keypoint matches enclosed by 2D roi
+    std::vector<double> crossMatchPoints; // map used to save number of matching points in each bounding box in the next frame
 };
 
 struct DataFrame { // represents the available sensor information at the same time instance
